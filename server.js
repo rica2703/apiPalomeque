@@ -11,7 +11,7 @@ const app = express();
 var corsOptions = {
   origin: "http://localhost:8081"
 };
-app.use(cors(corsOptions));
+app.use(cors());
 
 // parse requests of content-type - application/json
 app.use(express.json());
@@ -26,14 +26,14 @@ const accountLimiter = rateLimit({
   message: "Demasiadas peticiones, intenta nuevamente en 5 minutos"
 });
 app.use("/api/auth/signin", accountLimiter);
-app.use("/api/auth/crearsugerencia",accountLimiter);
-app.use("/api/auth/crearsugerencia", accountLimiter);
+// app.use("/api/auth/crearsugerencia",accountLimiter);
+// app.use("/api/auth/crearsugerencia", accountLimiter);
 app.use("/api/auth/signup", accountLimiter);
-app.use("/api/auth/crearproducto", accountLimiter);
-app.use("/api/auth/eliminarproducto/:id", accountLimiter);
-app.use("/api/auth/crearPedido", accountLimiter);
-app.use("/api/auth/editarpedido/:id", accountLimiter);
-app.use("/api/auth/crearreporte", accountLimiter);
+// app.use("/api/auth/crearproducto", accountLimiter);
+// app.use("/api/auth/eliminarproducto/:id", accountLimiter);
+// app.use("/api/auth/crearPedido", accountLimiter);
+// app.use("/api/auth/editarpedido/:id", accountLimiter);
+// app.use("/api/auth/crearreporte", accountLimiter);
 
 
 
@@ -44,7 +44,7 @@ app.get("/", (req, res) => {
 });
 
 // Rutas
-require("./app/routes/auth.routes")(app);
+require("./app/routes/auth.routes") (app);
 require("./app/routes/user.routes")(app);
 
 // Configuración y conexión a MongoDB

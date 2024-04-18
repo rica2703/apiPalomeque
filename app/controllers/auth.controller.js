@@ -2,165 +2,81 @@ const config = require("../config/auth.config");
 const db = require("../models");
 const User = db.user;
 const Role = db.role;
-const Stock = db.stock;
-const Sugerencias = db.sugerencias;
-const Pedidos = db.pedidos;
-const Reportes = db.reporte;
+const Mensaje=db.mensaje;
+
 
 var jwt = require("jsonwebtoken");
 var bcrypt = require("bcryptjs");
 
-exports.eliminarProducto = (req, res) => {
-  const productId = req.params.id;
+exports.createMensaje = async (req, res) => {
+  try {
+    const { username, contenido, fecha } = req.body;
 
-  if (!req.userId) {
-    return res.status(403).send({ message: "No tienes autorizacion!" });
+    // Crear una nueva instancia del modelo de mensaje
+    const nuevoMensaje = new Mensaje({
+      username: username,
+      contenido: contenido,
+      fecha: fecha
+    });
+
+    // Guardar el nuevo mensaje en la base de datos
+    const mensajeGuardado = await nuevoMensaje.save();
+
+    res.status(201).json({ message: 'Mensaje agregado correctamente', mensaje: mensajeGuardado });
+  } catch (error) {
+    console.error('Error al agregar el mensaje:', error);
+    res.status(500).json({ message: 'Error al agregar el mensaje', error: error.message });
   }
-
-  Stock.findByIdAndDelete(productId, (err, result) => {
-    if (err) {
-      return res.status(500).send({ message: err });
-    }
-
-    if (!result) {
-      return res.status(404).send({ message: "Producto no encontrado." });
-    }
-
-    res.status(200).send({ message: "Producto eliminado correctamente!" });
-  });
 };
 
-exports.editarPedido = (req, res) => {
-  const pedidoId = req.params.id;
 
-  Pedidos.findByIdAndUpdate(
-    pedidoId,
-    {
-      mesa: req.body.mesa,
-      noPedido: req.body.noPedido,
-      total: req.body.total,
-      orden: req.body.orden,
-    },
-    { new: true }
-  )
-    .then((pedido) => {
-      if (!pedido) {
-        return res.status(404).send({ message: "Pedido no encontrado" });
+exports.getAllMensajes = (req, res) => {
+  Mensaje.find()
+    .then(mensajes => {
+      res.status(200).json(mensajes);
+    })
+    .catch(err => {
+      res.status(500).send({ message: err.message || "Error al obtener todos los mensajes." });
+    });
+};
+exports.getUserByNumCuarto = (req, res) => {
+  const numCuarto = req.params.numCuarto;
+
+  // Buscar al usuario por su número de cuarto
+  User.findOne({ numCuarto: numCuarto })
+    .then(user => {
+      if (!user) {
+        return res.status(404).json({ message: `Usuario con número de cuarto ${numCuarto} no encontrado.` });
       }
-      res.status(200).send({ message: "Pedido editado correctamente", pedido });
+      res.status(200).json({ message: "Usuario encontrado correctamente", user });
     })
-    .catch((err) => {
-      res.status(500).send({ message: err.message || "Error al editar el pedido" });
+    .catch(err => {
+      res.status(500).json({ message: 'Error al buscar usuario por número de cuarto', error: err.message });
     });
 };
-
-exports.crearReporte = (req, res) => {
-  const reporte = new Reportes({
-    fecha: req.body.fecha,
-    total: req.body.total,
-    pedido: req.body.pedido,
-    mesa: req.body.mesa,
-  });
-  reporte.save((err, reporte) => {
-    if (err) {
-      res.status(500).send({ message: err });
-      return;
-    }
-    res.status(200).send({ message: "Reporte creado correctamente" });
-  });
-}
-exports.getAllReportes = (req, res) => {
-  Reportes.find()
-    .then((reporte) => {
-      res.status(200).json(reporte);
-    })
-    .catch((err) => {
-      res.status(500).send({ message: err.message || "Error retrieving reporte." });
-    });
-}
-
-exports.crearPedido = (req, res) => {
-  const pedido = new Pedidos({
-    mesa: req.body.mesa,
-    noPedido: req.body.noPedido,
-    total: req.body.total,
-    orden: req.body.orden,
-  });
-  pedido.save((err, pedido) => {
-    if (err) {
-      res.status(500).send({ message: err });
-      return;
-    }
-    res.status(200).send({ message: "Pedido creado correctamente" });
-  });
-}
-exports.getAllPedidos = (req, res) => {
-  Pedidos.find()
-    .then((pedido) => {
-      res.status(200).json(pedido);
-    })
-    .catch((err) => {
-      res.status(500).send({ message: err.message || "Error retrieving pedidos." });
-    });
-}
-
-
-exports.crearSugerencia = (req, res) => {
-  const sugerencia = new Sugerencias({
-    mesa: req.body.mesa,
-    fecha: req.body.fecha,
-    mensaje: req.body.mensaje,
-    tipo: req.body.tipo,
-  });
-  sugerencia.save((err, sugerencia) => {
-    if (err) {
-      res.status(500).send({ message: err });
-      return;
-    }
-    res.status(200).send({ message: "Sugerencia creada correctamente" });
-  });
-}
-exports.getAllSugerencias = (req, res) => {
-  Sugerencias.find()
-    .then((sugerencia) => {
-      res.status(200).json(sugerencia);
-    })
-    .catch((err) => {
-      res.status(500).send({ message: err.message || "Error retrieving sugerencias." });
-    });
-}
-
-exports.createProduct = (req, res) => {
-  const stock = new Stock({
+exports.updateUserById = (req, res) => {
+  const numCuarto = req.params.numCuarto;
+  const updatedData = {
+    username: req.body.username,
+    email: req.body.email,
     nombre: req.body.nombre,
-    precio: req.body.precio,
-    imagen: req.body.imagen,
-    estado: req.body.estado,
-  });
-  stock.save((err, stock) => {
-    if (err) {
-      res.status(500).send({ message: err });
-      return;
-    }
-    // res.status(200).send({ message: "Product created successfully!" });
-    res.status(200).send({
-      id: stock._id,
-      nombre: stock.nombre,
-      precio: stock.precio,
-      imagen: stock.imagen,
-      esatdo: stock.estado,
-    });
-  });
-}
-exports.getAllProducts = (req, res) => {
-  Stock.find()
-    .then((products) => {
-      res.status(200).json(products);
+    numCelular: req.body.numCelular,
+    nombreEmergencia: req.body.nombreEmergencia,
+    numEmergencia: req.body.numEmergencia,
+  };
+
+  // Encuentra y actualiza al usuario por su número de cuarto
+  User.findOneAndUpdate({ numCuarto: numCuarto }, updatedData, { new: true })
+    .then(user => {
+      if (!user) {
+        return res.status(404).send({ message: `Usuario con número de cuarto ${numCuarto} no encontrado.` });
+      }
+      res.status(200).send({ message: "Usuario actualizado correctamente", user });
     })
-    .catch((err) => {
-      res.status(500).send({ message: err.message || "Error retrieving products." });
+    .catch(err => {
+      res.status(500).send({ message: err.message || "Error al actualizar usuario por número de cuarto." });
     });
-}
+};
 
 exports.getAllUsers = (req, res) => {
   User.find()
@@ -172,13 +88,32 @@ exports.getAllUsers = (req, res) => {
     });
 }
 
+exports.deleteUserById = (req, res) => {
+  const numCuarto = req.params.numCuarto;
+
+  // Encuentra y elimina al usuario por su número de cuarto
+  User.findOneAndDelete({ numCuarto: numCuarto })
+    .then(user => {
+      if (!user) {
+        return res.status(404).send({ message: `Usuario con número de cuarto ${numCuarto} no encontrado.` });
+      }
+      res.status(200).send({ message: "Usuario eliminado correctamente", user });
+    })
+    .catch(err => {
+      res.status(500).send({ message: err.message || "Error al eliminar usuario por número de cuarto." });
+    });
+};
+
 exports.signup = (req, res) => {
   const user = new User({
     username: req.body.username,
     email: req.body.email,
     password: bcrypt.hashSync(req.body.password, 8),
     nombre: req.body.nombre,
-    apellidos: req.body.apellidos,
+    numCelular: req.body.numCelular,
+    nombreEmergencia: req.body.nombreEmergencia,
+    numEmergencia: req.body.numEmergencia,
+    numCuarto: req.body.numCuarto,
   });
 
   user.save((err, user) => {
@@ -205,7 +140,7 @@ exports.signup = (req, res) => {
               return;
             }
 
-            res.send({ message: "User was registered successfully!" });
+            res.send({ message: "Usuario registrado satisfactoriamente!",user});
           });
         }
       );
@@ -215,15 +150,13 @@ exports.signup = (req, res) => {
           res.status(500).send({ message: err });
           return;
         }
-
         user.roles = [role._id];
         user.save(err => {
           if (err) {
             res.status(500).send({ message: err });
             return;
           }
-
-          res.send({ message: "User was registered successfully!" });
+          res.send({ message: "Usuario registrado satisfactoriamente!!" });
         });
       });
     }
@@ -231,51 +164,61 @@ exports.signup = (req, res) => {
 };
 
 exports.signin = (req, res) => {
-  User.findOne({
-    username: req.body.username
-  })
-    .populate("roles", "-__v")
-    .exec((err, user) => {
-      if (err) {
-        res.status(500).send({ message: err });
-        return;
-      }
+  try {
+    User.findOne({
+      numCuarto: req.body.numCuarto
+    })
+      .populate("roles", "-__v")
+      .exec((err, user) => {
+        if (err) {
+          console.error('Error al buscar usuario:', err);
+          return res.status(500).send({ message: "Error interno del servidor." });
+        }
 
-      if (!user) {
-        return res.status(404).send({ message: "User Not found." });
-      }
+        if (!user) {
+          return res.status(404).send({ message: "Número de cuarto no encontrado." });
+        }
 
-      var passwordIsValid = bcrypt.compareSync(
-        req.body.password,
-        user.password
-      );
+        var passwordIsValid = bcrypt.compareSync(
+          req.body.password,
+          user.password
+        );
 
-      if (!passwordIsValid) {
-        return res.status(401).send({
-          accessToken: null,
-          message: "Invalid Password!"
+        if (!passwordIsValid) {
+          return res.status(401).send({
+            accessToken: null,
+            message: "Contraseña inválida."
+          });
+        }
+
+        const token = jwt.sign({ id: user.id },
+          config.secret,
+          {
+            algorithm: 'HS256',
+            allowInsecureKeySizes: true,
+            expiresIn: 86400, // 24 horas
+          });
+
+        var authorities = [];
+
+        for (let i = 0; i < user.roles.length; i++) {
+          authorities.push("ROLE_" + user.roles[i].name.toUpperCase());
+        }
+        res.status(200).send({
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          nombre: user.nombre,
+          numCelular: user.numCelular,
+          nombreEmergencia: user.nombreEmergencia,
+          numEmergencia: user.numEmergencia,
+          numCuarto: user.numCuarto,
+          roles: authorities,
+          accessToken: token
         });
-      }
-
-      const token = jwt.sign({ id: user.id },
-        config.secret,
-        {
-          algorithm: 'HS256',
-          allowInsecureKeySizes: true,
-          expiresIn: 86400, // 24 hours
-        });
-
-      var authorities = [];
-
-      for (let i = 0; i < user.roles.length; i++) {
-        authorities.push("ROLE_" + user.roles[i].name.toUpperCase());
-      }
-      res.status(200).send({
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        roles: authorities,
-        accessToken: token
       });
-    });
+  } catch (error) {
+    console.error('Error en el controlador de signin:', error);
+    res.status(500).json({ message: 'Error interno del servidor.', error: error.message });
+  }
 };
