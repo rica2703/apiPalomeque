@@ -29,7 +29,7 @@ module.exports = function(app) {
     [
       verifySignUp.checkDuplicateUsernameOrEmail,
       // verifySignUp.checkRolesExisted
-    ],
+    ],[authJwt.verifyToken],
     controller.signup
   );
   app.get("/api/auth/users",[authJwt.verifyToken],controller.getAllUsers);

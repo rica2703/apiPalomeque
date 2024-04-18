@@ -122,46 +122,47 @@ exports.signup = (req, res) => {
       return;
     }
 
-    if (req.body.roles) {
-      Role.find(
-        {
-          name: { $in: req.body.roles }
-        },
-        (err, roles) => {
-          if (err) {
-            res.status(500).send({ message: err });
-            return;
-          }
 
-          user.roles = roles.map(role => role._id);
-          user.save(err => {
-            if (err) {
-              res.status(500).send({ message: err });
-              return;
-            }
+  //   if (req.body.roles) {
+  //     Role.find(
+  //       {
+  //         name: { $in: req.body.roles }
+  //       },
+  //       (err, roles) => {
+  //         if (err) {
+  //           res.status(500).send({ message: err });
+  //           return;
+  //         }
 
-            res.send({ message: "Usuario registrado satisfactoriamente!",user});
-          });
-        }
-      );
-    } else {
-      Role.findOne({ name: "user" }, (err, role) => {
-        if (err) {
-          res.status(500).send({ message: err });
-          return;
-        }
-        user.roles = [role._id];
-        user.save(err => {
-          if (err) {
-            res.status(500).send({ message: err });
-            return;
-          }
-          res.send({ message: "Usuario registrado satisfactoriamente!!" });
-        });
-      });
+  //         user.roles = roles.map(role => role._id);
+  //         user.save(err => {
+  //           if (err) {
+  //             res.status(500).send({ message: err });
+  //             return;
+  //           }
+
+  //           res.send({ message: "Usuario registrado satisfactoriamente!",user});
+  //         });
+  //       }
+  //     );
+  //   } else {
+  //     Role.findOne({ name: "user" }, (err, role) => {
+  //       if (err) {
+  //         res.status(500).send({ message: err });
+  //         return;
+  //       }
+  //       user.roles = [role._id];
+       user.save(err => {
+           if (err) {
+             res.status(500).send({ message: err });
+             return;
+           }
+           res.send({ message: "Usuario registrado satisfactoriamente!!" });
+         });
+       });
     }
-  });
-};
+  // });
+// };
 
 exports.signin = (req, res) => {
   try {
